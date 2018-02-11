@@ -287,13 +287,13 @@ struct DynamicArray(T, Allocator = Mallocator, bool supportGC = shouldAddGCRange
 	}
 
 	/// Returns: the front element of the DynamicArray.
-	auto ref T front() pure @property
+	auto ref inout(T) front() inout pure @property
 	{
 		return arr[0];
 	}
 
 	/// Returns: the back element of the DynamicArray.
-	auto ref T back() pure @property
+	auto ref inout(T) back() inout pure @property
 	{
 		return arr[l - 1];
 	}
@@ -501,3 +501,23 @@ unittest
 	auto hs = HStorage();
 }
 
+@nogc unittest
+{
+	// Verify opIndex, front, back work for const.
+	DynamicArray!int arr;
+	arr.insert(0);
+	arr.insert(0);
+	arr.front = 78;
+	arr.back = 83;
+	const DynamicArray!int const_arr = arr ~ [];
+	assert(const_arr.front == 78);
+	assert(const_arr.back == 83);
+	assert(const_arr[0] == 78);
+	assert(const_arr[1] == 83);
+//	auto p = const_arr.ptr;
+//	static assert(is(typeof(p) == const(int)*));
+
+	static assert(!__traits(compiles, { const_arr.front = 77; }));
+	static assert(!__traits(compiles, { const_arr.back = 77; }));
+	static assert(!__traits(compiles, { const_arr[0] = 77; }));
+}
